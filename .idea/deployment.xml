@@ -15,6 +15,7 @@
             <mapping deploy="/tmp/tmp.bT6dNYGJOu" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-s1phfnde-coverage" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-wsl" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-s1phfnde" />
