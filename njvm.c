@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <stdint.h>
+
 #define VERSION 0
 #define DEBUG
 
@@ -12,6 +12,7 @@
 #define ERROR 1
 #define STACKOVERFLOW_ERROR 2
 #define STACKUNDERFLOW_ERROR 3
+#define DIVISIONBYZERO_ERROR 4
 
 #define STACK_SIZE 100
 #define SIZE_OF_INT 4
@@ -63,10 +64,78 @@ int pull(){
         printf("STACKOVERFLOW_ERROR");
         exit(STACKOVERFLOW_ERROR);
     }
-
-    int res=*sp;
     sp = sp - 1;//siehe ln 57
+    int res = *sp;
+
     return res;
+}
+
+void add(){
+    int y = pull();
+    int x = pull();
+
+    push(x+y);
+}
+
+void sub(){
+    int y = pull();
+    int x = pull();
+
+    push(x-y);
+}
+
+void mul(){
+    int y = pull();
+    int x = pull();
+
+    push(x*y);
+}
+
+void division(){
+    int y = pull();
+    int x = pull();
+
+    if (y == 0){
+        printf("Error: Division by 0\n");
+        exit(DIVISIONBYZERO_ERROR);
+    }
+
+    push(x / y);
+}
+
+void mod(){
+    int y = pull();
+    int x = pull();
+
+    if (y == 0){
+        printf("Error: Division by 0\n");
+        exit(DIVISIONBYZERO_ERROR);
+    }
+    push(x % y);
+}
+
+void rdint(){
+    int input = 0;
+    scanf("%d", &input);
+
+    push(input);
+}
+
+void wrint(){
+    int output = pull();
+    printf("%d", output);
+}
+
+void rdchr(){
+    char input = 0;
+    scanf("%c", &input);
+
+    push(input);
+}
+
+void wrchr(){
+    int output = pull();
+    printf("%c", (char)output);
 }
 
 
@@ -82,7 +151,43 @@ void exec(int IR){
         case PUSHC:
             push(imm);
             break;
-        //... ADD folling
+
+        case ADD:
+            add();
+            break;
+
+        case SUB:
+            sub();
+            break;
+
+        case MUL:
+            mul();
+            break;
+
+        case DIV:
+            division();
+            break;
+
+        case MOD:
+            mod();
+            break;
+
+        case RDINT:
+            rdint();
+            break;
+
+        case WRINT:
+            wrint();
+            break;
+
+        case RDCHR:
+            rdchr();
+            break;
+
+        case WRCHR:
+            wrchr();
+            break;
+
         default:
             printf("NOT IMPLEMENTED YET");
     }
@@ -112,12 +217,33 @@ unsigned int prog_1[] = {
         (WRCHR << 24),
         (HALT << 24)
 };
+
+unsigned int prog_2[] = {
+        (PUSHC << 24) | IMMEDIATE(-2),
+        (RDINT << 24),
+        (MUL << 24),
+        (PUSHC << 24) | IMMEDIATE(3),
+        (ADD << 24),
+        (WRINT << 24),
+        (PUSHC << 24) | IMMEDIATE(10),
+        (WRCHR << 24),
+        (HALT << 24)
+};
+
+unsigned int prog_3[] = {
+        (RDCHR << 24),
+        (WRINT << 24),
+        (PUSHC << 24) | IMMEDIATE(10),
+        (WRCHR << 24),
+        (HALT << 24)
+};
+
 unsigned int prog_halt[]={(HALT << 24)};
 
 int main(int argc, char* argv[]){
 
     if (argc > 1){
-    	if (strcmp(argv[1], "--help") == 0){
+        if (strcmp(argv[1], "--help") == 0){
             printf("usage: ../njvm [option] [option] ...\n"
                    "  --version        show version and exit\n"
                    "  --help           show this help and exit\n");
@@ -126,7 +252,7 @@ int main(int argc, char* argv[]){
             printf("Ninja Virtual Machine version 0\n");
             exit(0);
         }else if (strcmp(argv[1], "--prog1") == 0) {
-    	    prog_mem = prog_1;
+            prog_mem = prog_1;
         }else if (strcmp(argv[1], "test") == 0) {
             printf("RESERVED FOR TESTING PURPOSE\n");
             printf("%x", SIZE_OF_INT);
@@ -134,7 +260,7 @@ int main(int argc, char* argv[]){
         }else{
             printf("unknown command line argument '%s', try '%s --help'\n",argv[1], argv[0]);
             exit(0);
-    	}
+        }
     }else{
 
         prog_mem=prog_halt;
