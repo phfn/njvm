@@ -2,23 +2,31 @@
 <project version="4">
   <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
-      <paths name="WSL (19059537-fb01-45e1-8f8f-cab91096e80d)">
+      <paths name="Remote Host (4e1985d2-ae3d-4ef5-919f-f945e31843b6)">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="phfn@s1.phfn.de (2dc79b8d-2082-45d2-b26b-889fc7adce93)">
+      <paths name="WSL Ubuntu (adb29a00-5b8c-41f7-8ea0-094081f48586)">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/tmp.bT6dNYGJOu" local="$PROJECT_DIR$" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="s1.phfn.de (e39ba9cb-1ba4-4d78-b23e-a20dcb0ca8a1)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/tmp.NHD4XcKJng" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-s1phfnde-coverage" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-wsl" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-coverage" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-s1phfnde" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-wsl" />
           </excludedPaths>
         </serverdata>
       </paths>

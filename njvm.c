@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
-#define VERSION 0
+#define VERSION 1
 #define DEBUG
 
 #define TRUE 1
@@ -12,10 +11,9 @@
 #define ERROR 1
 #define STACKOVERFLOW_ERROR 2
 #define STACKUNDERFLOW_ERROR 3
-#define DIVISIONBYZERO_ERROR 4
+#define DIVISION_BY_ZERO_ERROR 4
 
 #define STACK_SIZE 100
-#define SIZE_OF_INT 4
 
 #define HALT 0
 #define PUSHC 1
@@ -59,10 +57,10 @@ void push(int value){
 }
 
 
-int pull(){
+int pop(){
     if(sp <= stack){
-        printf("STACKOVERFLOW_ERROR");
-        exit(STACKOVERFLOW_ERROR);
+        printf("STACKUNDERFLOW_ERROR");
+        exit(STACKUNDERFLOW_ERROR);
     }
     sp = sp - 1;//siehe ln 57
     int res = *sp;
@@ -70,80 +68,16 @@ int pull(){
     return res;
 }
 
-void add(){
-    int y = pull();
-    int x = pull();
-
-    push(x+y);
-}
-
-void sub(){
-    int y = pull();
-    int x = pull();
-
-    push(x-y);
-}
-
-void mul(){
-    int y = pull();
-    int x = pull();
-
-    push(x*y);
-}
-
-void division(){
-    int y = pull();
-    int x = pull();
-
-    if (y == 0){
-        printf("Error: Division by 0\n");
-        exit(DIVISIONBYZERO_ERROR);
-    }
-
-    push(x / y);
-}
-
-void mod(){
-    int y = pull();
-    int x = pull();
-
-    if (y == 0){
-        printf("Error: Division by 0\n");
-        exit(DIVISIONBYZERO_ERROR);
-    }
-    push(x % y);
-}
-
-void rdint(){
-    int input = 0;
-    scanf("%d", &input);
-
-    push(input);
-}
-
-void wrint(){
-    int output = pull();
-    printf("%d", output);
-}
-
-void rdchr(){
-    char input = 0;
-    scanf("%c", &input);
-
-    push(input);
-}
-
-void wrchr(){
-    int output = pull();
-    printf("%c", (char)output);
-}
 
 
 unsigned int halt_bool=FALSE;
-void exec(int IR){
-    int code=IR>>24;
+void exec(unsigned int IR){
+    int opcode=IR >> 24;
     int imm=SIGN_EXTEND(IMMEDIATE(IR));
-    switch (code) {
+    int y;
+    int x;
+
+    switch (opcode) {
         case HALT:
             halt_bool=TRUE;
             break;
@@ -153,50 +87,79 @@ void exec(int IR){
             break;
 
         case ADD:
-            add();
+            y = pop();
+            x = pop();
+
+            push(x+y);
             break;
 
         case SUB:
-            sub();
+            y = pop();
+            x = pop();
+
+            push(x-y);
             break;
 
         case MUL:
-            mul();
+            y = pop();
+            x = pop();
+
+            push(x*y);
             break;
 
         case DIV:
-            division();
+            y = pop();
+            x = pop();
+
+            if (y == 0){
+                printf("Error: Division by 0\n");
+                exit(DIVISION_BY_ZERO_ERROR);
+            }
+
+            push(x / y);
             break;
 
         case MOD:
-            mod();
+            y = pop();
+            x = pop();
+
+            if (y == 0){
+                printf("Error: Division by 0\n");
+                exit(DIVISION_BY_ZERO_ERROR);
+            }
+            push(x % y);
             break;
 
         case RDINT:
-            rdint();
+            scanf("%d", &x);
+
+            push(x);
             break;
 
         case WRINT:
-            wrint();
+            x = pop();
+            printf("%d", x);
             break;
 
         case RDCHR:
-            rdchr();
+            x=getchar();
+            push(x);
             break;
 
         case WRCHR:
-            wrchr();
+            x = pop();
+            printf("%c", x);
             break;
 
         default:
-            printf("NOT IMPLEMENTED YET");
+            printf("ERROR NOT IMPLEMENTED YET");
     }
 }
 
 
 
 void run(){
-    int IR;
+    unsigned int IR;
     while(!halt_bool){
         IR=prog_mem[pc];
         pc=pc+1;
@@ -249,13 +212,16 @@ int main(int argc, char* argv[]){
                    "  --help           show this help and exit\n");
             exit(0);
         }else if (strcmp(argv[1], "--version") == 0) {
-            printf("Ninja Virtual Machine version 0\n");
+            printf("Ninja Virtual Machine version %d\n", VERSION);
             exit(0);
         }else if (strcmp(argv[1], "--prog1") == 0) {
             prog_mem = prog_1;
-        }else if (strcmp(argv[1], "test") == 0) {
+        }else if (strcmp(argv[1], "--prog2") == 0) {
+            prog_mem = prog_2;
+        }else if (strcmp(argv[1], "--prog3") == 0) {
+            prog_mem = prog_3;
+        }else if (strcmp(argv[1], "--test") == 0) {
             printf("RESERVED FOR TESTING PURPOSE\n");
-            printf("%x", SIZE_OF_INT);
             exit(0);
         }else{
             printf("unknown command line argument '%s', try '%s --help'\n",argv[1], argv[0]);
