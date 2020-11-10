@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VERSION 1
+#define VERSION 2
 #define DEBUG
 
 #define TRUE 1
