@@ -23,10 +23,10 @@
           </mappings>
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-wsl" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-coverage" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-s1phfnde" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-wsl" />
           </excludedPaths>
         </serverdata>
       </paths>

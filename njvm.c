@@ -36,6 +36,7 @@
 //if (i&0x00800000){i= i | 0xFF000000} else{i=i}
 //wenn erstes immediate gesetz (also negative zahl im immediate) -> setzen auch die ersten 8 bit damit die Zahl auch als negativ betrachtet wird
 
+char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR"};
 
 unsigned int *prog_mem;
 
@@ -201,6 +202,20 @@ unsigned int prog_3[] = {
         (HALT << 24)
 };
 
+void print_prog_mem(){
+    unsigned int *p=&prog_mem[0];
+    int opcode;
+    unsigned int IR;
+    int imm;
+    do{
+        IR=*p;
+        opcode=IR >> 24;
+        imm=SIGN_EXTEND(IMMEDIATE(IR));
+        printf("%s %d\n", opCodes[opcode], imm);
+        p++;
+    }while(opcode!=HALT);
+}
+
 unsigned int prog_halt[]={(HALT << 24)};
 
 int main(int argc, char* argv[]){
@@ -231,6 +246,7 @@ int main(int argc, char* argv[]){
 
         prog_mem=prog_halt;
     }
+    print_prog_mem();
     printf("Ninja Virtual Machine started\n");
     run();
     printf("Ninja Virtual Machine stopped\n");
