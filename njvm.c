@@ -221,26 +221,41 @@ unsigned int prog_halt[]={(HALT << 24)};
 int main(int argc, char* argv[]){
 
     if (argc > 1){
-        if (strcmp(argv[1], "--help") == 0){
-            printf("usage: ../njvm [option] [option] ...\n"
-                   "  --version        show version and exit\n"
-                   "  --help           show this help and exit\n");
-            exit(0);
-        }else if (strcmp(argv[1], "--version") == 0) {
-            printf("Ninja Virtual Machine version %d\n", VERSION);
-            exit(0);
-        }else if (strcmp(argv[1], "--prog1") == 0) {
-            prog_mem = prog_1;
-        }else if (strcmp(argv[1], "--prog2") == 0) {
-            prog_mem = prog_2;
-        }else if (strcmp(argv[1], "--prog3") == 0) {
-            prog_mem = prog_3;
-        }else if (strcmp(argv[1], "--test") == 0) {
-            printf("RESERVED FOR TESTING PURPOSE\n");
-            exit(0);
-        }else{
-            printf("unknown command line argument '%s', try '%s --help'\n",argv[1], argv[0]);
-            exit(0);
+        for(int i=1; i< argc; i++){
+            if (strcmp(argv[i], "--help") == 0){
+                printf("usage: ../njvm [option] [option] ...\n"
+                       "  --version        show version and exit\n"
+                       "  --help           show this help and exit\n");
+                exit(0);
+            }else if (strcmp(argv[i], "--version") == 0) {
+                printf("Ninja Virtual Machine version %d\n", VERSION);
+                exit(0);
+            }else if (strcmp(argv[i], "--prog1") == 0) {
+                prog_mem = prog_1;
+                break;
+            }else if (strcmp(argv[i], "--prog2") == 0) {
+                prog_mem = prog_2;
+                break;
+            }else if (strcmp(argv[i], "--prog3") == 0) {
+                prog_mem = prog_3;
+                break;
+            }else if (strcmp(argv[i], "--test") == 0) {
+                printf("RESERVED FOR TESTING PURPOSE\n");
+                exit(0);
+            }else if (strcmp(argv[i], "--compile") == 0) {
+                char* imput_file = argv[i+1];
+                char* output_file = argv[i+2];
+                system("chmod +x nja");
+                char command[100];
+                sprintf(command, "./nja %s %s", imput_file, output_file);
+                printf(command);
+                system(command);
+                i++;
+                exit(0);
+            }else{
+                printf("unknown command line argument '%s', try '%s --help'\n",argv[1], argv[0]);
+                exit(0);
+            }
         }
     }else{
 
