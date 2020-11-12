@@ -12,17 +12,17 @@
 #define STACKOVERFLOW_ERROR 2
 #define STACKUNDERFLOW_ERROR 3
 #define DIVISION_BY_ZERO_ERROR 4
-#define FRAME_POINTER_INVALID 5
+
 
 #define FILE_NOT_FOUND_ERROR 5
 #define WRONG_FILE_SIZE_ERROR 6
 #define NJBF_ERROR 7
 #define WRONG_VERSION_ERROR 8
 #define MEMORY_FULL_ERROR 9
-
 #define NO_CODE_FILE_ARGUMENT_ERROR 10
 #define UNKNOWN_ARGUMENT_ERROR 11
 
+#define FRAME_POINTER_INVALID 12
 #define STACK_SIZE 100
 
 #define HALT   0
@@ -311,18 +311,6 @@ int main(int argc, char* argv[]){
             }else if (strcmp(argv[i], "--version") == 0) {
                 printf("Ninja Virtual Machine version %d\n", VERSION);
                 exit(0);
-            }else if (strcmp(argv[i], "--prog1") == 0) {
-                prog_mem = prog_1;
-                break;
-            }else if (strcmp(argv[i], "--prog2") == 0) {
-                prog_mem = prog_2;
-                break;
-            }else if (strcmp(argv[i], "--prog3") == 0) {
-                prog_mem = prog_3;
-                break;
-            }else if (strcmp(argv[i], "--test") == 0) {
-                printf("RESERVED FOR TESTING PURPOSE\n");
-                exit(0);
             }else if (strcmp(argv[i], "--compile") == 0) {
                 char* imput_file = argv[i+1];
                 char* output_file = argv[i+2];
@@ -332,14 +320,13 @@ int main(int argc, char* argv[]){
                 printf(command);
                 system(command);
                 i++;
-                exit(0);
             }else{
-                load_memory(argv[1]);
+                load_memory(argv[i]);
             }
         }
     }else{
-
-        prog_mem=prog_halt;
+        printf("try --help");
+        exit(ERROR);
     }
     print_prog_mem();
     printf("Ninja Virtual Machine started\n");
