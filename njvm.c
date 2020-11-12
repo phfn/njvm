@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define VERSION 2
-#define DEBUG
+//#define DEBUG
 
 #define TRUE 1
 #define FALSE 0
@@ -19,8 +19,7 @@
 #define NJBF_ERROR 7
 #define WRONG_VERSION_ERROR 8
 #define MEMORY_FULL_ERROR 9
-#define NO_CODE_FILE_ARGUMENT_ERROR 10
-#define UNKNOWN_ARGUMENT_ERROR 11
+#define INVALID_ARGUMENTS_ERROR 10
 
 #define FRAME_POINTER_INVALID 12
 #define STACK_SIZE 100
@@ -53,12 +52,11 @@
 //if (i&0x00800000){i= i | 0xFF000000} else{i=i}
 //wenn erstes immediate gesetz (also negative zahl im immediate) -> setzen auch die ersten 8 bit damit die Zahl auch als negativ betrachtet wird
 
-char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR"};
-
+char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR", "PUSHG", "POPG ", "ASF  ", "RSF  ", "PUSHL", "POPL"};
 
 int stack[STACK_SIZE];
-int *sp=stack;//Stack Pointer
-int *fp=stack;//frame pointer
+int sp=0;//Stack Pointer
+int fp=0;//frame pointer
 
 unsigned int pc=0;//Programm Counter
 unsigned int *prog_mem;
@@ -69,25 +67,40 @@ unsigned int sda_size;
 
 
 void push(int value){
-    if(sp > &stack[STACK_SIZE]){
+    if(sp > STACK_SIZE){
         printf("STACKOVERFLOW_ERROR");
         exit(STACKOVERFLOW_ERROR);
     }
 
-    *sp = value;
-    sp = sp + 1;
+    stack[sp] = value;
+    sp++;
 }
 
 
 int pop(){
-    if(sp <= stack){
+    if(sp <= 0){
         printf("STACKUNDERFLOW_ERROR");
         exit(STACKUNDERFLOW_ERROR);
     }
-    sp = sp - 1;//siehe ln 57
-    int res = *sp;
+    sp--;//siehe ln 57
 
-    return res;
+    return stack[sp];
+}
+
+void print_stack(void) {
+    printf("\n Stack\n");
+    printf(".-------+--------.\n");
+    for (int i=sp; i>=0; i--) {
+        if (i==sp)
+            printf("|sp->%3d| <empty>|\n", i);
+        else if(i==fp){
+            printf("|fp->%3d| %6d |\n", i,stack[i]);
+        }else{
+            printf("|%7d| %6d |\n", i, stack[i]);
+        }
+
+    }
+    printf("'-------+--------'\n\n");
 }
 
 
@@ -98,6 +111,12 @@ void exec(unsigned int IR){
     int y;
     int x;
 
+#ifdef DEBUG
+
+    print_stack();
+    printf("opCode: %s\n"
+           "imm:    %d\n", opCodes[opcode], imm);
+#endif
     switch (opcode) {
         case HALT:
             halt_bool=TRUE;
@@ -180,9 +199,9 @@ void exec(unsigned int IR){
             break;
 
         case ASF:
-            if(fp>=sp) exit(FRAME_POINTER_INVALID);
-            if(sp+imm>&stack[STACK_SIZE]) exit(STACKOVERFLOW_ERROR);
-            if(sp+imm<stack) exit(STACKUNDERFLOW_ERROR);
+            if(fp>sp) exit(FRAME_POINTER_INVALID);
+            if(sp+imm>STACK_SIZE) exit(STACKOVERFLOW_ERROR);
+            if(sp+imm<0) exit(STACKUNDERFLOW_ERROR);
             push(fp);
             fp = sp;
             sp = sp + imm;
@@ -194,13 +213,12 @@ void exec(unsigned int IR){
             break;
 
         case PUSHL:
-            *(fp +imm) = pop();
+            stack[fp +imm] = pop();
             break;
 
         case POPL:
-            push(*(fp + imm));
+            push(stack[fp + imm]);
             break;
-
 
         default:
             printf("ERROR NOT IMPLEMENTED YET");
@@ -211,13 +229,15 @@ void exec(unsigned int IR){
 void run(){
     unsigned int IR;
     while(!halt_bool){
+
         IR=prog_mem[pc];
         pc=pc+1;
         exec(IR);
+
     }
 }
 
-void load_memory(char *filepath){
+void load_prog_memory(char *filepath){
     FILE *file;
     file = fopen(filepath, "r");
 
@@ -238,13 +258,13 @@ void load_memory(char *filepath){
     }
 
 
-    unsigned version;
-    if (fread(&version, sizeof(unsigned int), 1, file) != 1){
+    unsigned version_file;
+    if (fread(&version_file, sizeof(unsigned int), 1, file) != 1){
         printf("Error: cannot read code file '%s'\n", filepath);
         exit(WRONG_FILE_SIZE_ERROR);
     }
-    if (version != VERSION){
-        printf("Error: file '%s' has wrong version number\n", filepath);
+    if (version_file != VERSION){
+        printf("Error: file '%s' has wrong version_file number\n", filepath);
         exit(WRONG_VERSION_ERROR);
     }
 
@@ -292,7 +312,7 @@ void print_prog_mem(){
         IR=*p;
         opcode=IR >> 24;
         imm=SIGN_EXTEND(IMMEDIATE(IR));
-        printf("%s %d\n", opCodes[opcode], imm);
+        printf("%s %3d\n", opCodes[opcode], imm);
         p++;
     }while(opcode!=HALT);
 }
@@ -307,31 +327,34 @@ int main(int argc, char* argv[]){
                 printf("usage: ../njvm [option] [option] file ...\n"
                        "  --version                            show version and exit\n"
                        "  --help                               show this help and exit\n"
-                       "  --compile <inputfile> <outputfile>   compile an asm file to bin and run the bin\n"
-                       "  file                                 run Programm");
+                       "  --assemble <inputfile> <outputfile>   compile an asm file to bin and run the bin\n"
+                       "  file                                 run program");
                 exit(0);
             }else if (strcmp(argv[i], "--version") == 0) {
                 printf("Ninja Virtual Machine version %d\n", VERSION);
                 exit(0);
-            }else if (strcmp(argv[i], "--compile") == 0) {
+            }else if (strcmp(argv[i], "--assemble") == 0) {
                 char* imput_file = argv[i+1];
                 char* output_file = argv[i+2];
                 system("chmod +x nja");
-                char command[100];
+                char command[256];
                 sprintf(command, "./nja %s %s", imput_file, output_file);
-                printf(command);
                 system(command);
                 i++;
-            }else{
-                load_memory(argv[i]);
+            }else if (argv[i][0] == '-'){
+                printf("unknown command line argument '%s', try '%s --help'\n", argv[1], argv[0]);
+                exit(INVALID_ARGUMENTS_ERROR);
+            }
+            else{
+                load_prog_memory(argv[i]);
             }
         }
     }else{
         printf("try --help");
-        exit(ERROR);
+        exit(INVALID_ARGUMENTS_ERROR);
     }
-    print_prog_mem();
     printf("Ninja Virtual Machine started\n");
+    print_prog_mem();
     run();
     printf("Ninja Virtual Machine stopped\n");
     return 0;
