@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VERSION 1
+#define VERSION 2
 #define DEBUG
 
 #define TRUE 1
@@ -12,6 +12,15 @@
 #define STACKOVERFLOW_ERROR 2
 #define STACKUNDERFLOW_ERROR 3
 #define DIVISION_BY_ZERO_ERROR 4
+
+#define FILE_NOT_FOUND_ERROR 5
+#define WRONG_FILE_SIZE_ERROR 6
+#define NJBF_ERROR 7
+#define WRONG_VERSION_ERROR 8
+#define MEMORY_FULL_ERROR 9
+
+#define NO_CODE_FILE_ARGUMENT_ERROR 10
+#define UNKNOWN_ARGUMENT_ERROR 11
 
 #define STACK_SIZE 100
 
@@ -37,14 +46,17 @@
 //wenn erstes immediate gesetz (also negative zahl im immediate) -> setzen auch die ersten 8 bit damit die Zahl auch als negativ betrachtet wird
 
 char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR"};
-
-unsigned int *prog_mem;
-
-unsigned int pc=0;//Programm Counter
+//char* opCodes[]={"halt ", "pushc", "add  ", "sub  ", "mul  ", "div  ", "mov  ", "rdint", "wrint", "rdchr", "wrchr"};
 
 int stack[STACK_SIZE];
 int *sp=stack;//Stack Pointer
+unsigned int pc=0;//Programm Counter
 
+unsigned int *prog_mem;
+unsigned int prog_mem_size;
+
+int *sda;
+unsigned int sda_size;
 
 
 void push(int value){
@@ -54,9 +66,8 @@ void push(int value){
     }
 
     *sp = value;
-    sp = sp + 1;//rechnet plus vier, ich weiß nich genau warum, muss aber auch 4 rechnen um zu funzen...
+    sp = sp + 1;
 }
-
 
 int pop(){
     if(sp <= stack){
@@ -68,8 +79,6 @@ int pop(){
 
     return res;
 }
-
-
 
 unsigned int halt_bool=FALSE;
 void exec(unsigned int IR){
@@ -157,8 +166,6 @@ void exec(unsigned int IR){
     }
 }
 
-
-
 void run(){
     unsigned int IR;
     while(!halt_bool){
@@ -168,39 +175,71 @@ void run(){
     }
 }
 
-unsigned int prog_1[] = {
-        (PUSHC << 24) | IMMEDIATE(3),
-        (PUSHC << 24) | IMMEDIATE(4),
-        (ADD << 24),
-        (PUSHC << 24) | IMMEDIATE(10),
-        (PUSHC << 24) | IMMEDIATE(6),
-        (SUB << 24),
-        (MUL << 24),
-        (WRINT << 24),
-        (PUSHC << 24) | IMMEDIATE(10),
-        (WRCHR << 24),
-        (HALT << 24)
-};
+void load_memory(char *filepath){
+    FILE *file;
+    file = fopen(filepath, "r");
 
-unsigned int prog_2[] = {
-        (PUSHC << 24) | IMMEDIATE(-2),
-        (RDINT << 24),
-        (MUL << 24),
-        (PUSHC << 24) | IMMEDIATE(3),
-        (ADD << 24),
-        (WRINT << 24),
-        (PUSHC << 24) | IMMEDIATE(10),
-        (WRCHR << 24),
-        (HALT << 24)
-};
+    if (!file){
+        printf("Error: cannot open code file '%s'\n", filepath);
+        exit(FILE_NOT_FOUND_ERROR);
+    }
 
-unsigned int prog_3[] = {
-        (RDCHR << 24),
-        (WRINT << 24),
-        (PUSHC << 24) | IMMEDIATE(10),
-        (WRCHR << 24),
-        (HALT << 24)
-};
+
+    unsigned int njbf;
+    if (fread(&njbf, sizeof(unsigned int), 1, file) != 1){
+        printf("Error: cannot read code file '%s'\n", filepath);
+        exit(WRONG_FILE_SIZE_ERROR);
+    }
+    if (njbf != 0x46424a4e){
+        printf("Error: file '%s' is not a Ninja binary\n", filepath);
+        exit(NJBF_ERROR);
+    }
+
+
+    unsigned version;
+    if (fread(&version, sizeof(unsigned int), 1, file) != 1){
+        printf("Error: cannot read code file '%s'\n", filepath);
+        exit(WRONG_FILE_SIZE_ERROR);
+    }
+    if (version != VERSION){
+        printf("Error: file '%s' has wrong version number\n", filepath);
+        exit(WRONG_VERSION_ERROR);
+    }
+
+
+    if (fread(&prog_mem_size, sizeof(unsigned int), 1, file) != 1){
+        printf("Error: cannot read code file '%s'\n", filepath);
+        exit(WRONG_FILE_SIZE_ERROR);
+    }
+
+    prog_mem = malloc(sizeof(unsigned int) * prog_mem_size);
+    if (!prog_mem){
+        printf("Error: No free heap memory\n");
+        exit(MEMORY_FULL_ERROR);
+    }
+
+
+    if (fread(&sda_size, sizeof(unsigned int), 1, file) != 1){
+        printf("Error: cannot read code file '%s'\n", filepath);
+        exit(WRONG_FILE_SIZE_ERROR);
+    }
+
+    sda = malloc(sizeof(unsigned int) * sda_size);
+    if (!sda){
+        printf("Error: No free heap memory\n");
+        exit(MEMORY_FULL_ERROR);
+    }
+
+
+    for (int i=0; i<prog_mem_size; i++){
+        if (fread(&prog_mem[i], sizeof(unsigned int), 1, file) != 1) {
+            printf("Error: cannot read code file '%s'\n", filepath);
+            exit(WRONG_FILE_SIZE_ERROR);
+        }
+    }
+
+    fclose(file);
+}
 
 void print_prog_mem(){
     unsigned int *p=&prog_mem[0];
@@ -216,39 +255,40 @@ void print_prog_mem(){
     }while(opcode!=HALT);
 }
 
-unsigned int prog_halt[]={(HALT << 24)};
 
 int main(int argc, char* argv[]){
 
-    if (argc > 1){
-        if (strcmp(argv[1], "--help") == 0){
-            printf("usage: ../njvm [option] [option] ...\n"
-                   "  --version        show version and exit\n"
-                   "  --help           show this help and exit\n");
-            exit(0);
-        }else if (strcmp(argv[1], "--version") == 0) {
-            printf("Ninja Virtual Machine version %d\n", VERSION);
-            exit(0);
-        }else if (strcmp(argv[1], "--prog1") == 0) {
-            prog_mem = prog_1;
-        }else if (strcmp(argv[1], "--prog2") == 0) {
-            prog_mem = prog_2;
-        }else if (strcmp(argv[1], "--prog3") == 0) {
-            prog_mem = prog_3;
-        }else if (strcmp(argv[1], "--test") == 0) {
-            printf("RESERVED FOR TESTING PURPOSE\n");
-            exit(0);
-        }else{
-            printf("unknown command line argument '%s', try '%s --help'\n",argv[1], argv[0]);
-            exit(0);
-        }
-    }else{
-
-        prog_mem=prog_halt;
+    if (argc < 2) {
+        printf("Error: no code file specified\n");
+        exit(NO_CODE_FILE_ARGUMENT_ERROR);
     }
-    print_prog_mem();
+    if (strcmp(argv[1], "--help") == 0){
+        printf("usage: %s [options] <code file>\n"
+               "  --version        show version and exit\n"
+               "  --help           show this help and exit", argv[0]);
+        exit(0);
+    }
+    else if (strcmp(argv[1], "--version") == 0){
+        printf("Ninja Virtual Machine version %d (compiled %s, %s)\n", VERSION, __DATE__, __TIME__);
+        exit(0);
+    }
+    else if (strcmp(argv[1], "--test") == 0){
+        printf("RESERVED FOR TESTING PURPOSE\n");
+        exit(0);
+    }
+    else if (argv[1][0] == '-'){
+        printf("unknown command line argument '%s', try '%s --help'\n", argv[1], argv[0]);
+        exit(UNKNOWN_ARGUMENT_ERROR);
+    }
+    else{
+        load_memory(argv[1]);
+    }
+
     printf("Ninja Virtual Machine started\n");
+
+    print_prog_mem();
     run();
+
     printf("Ninja Virtual Machine stopped\n");
     return 0;
 }
