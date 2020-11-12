@@ -1,0 +1,59 @@
+ifndef::includedir[]
+ifndef::backend-pdf[]
+:includedir: ./
+endif::[]
+ifdef::backend-pdf[]
+:includedir: https://git.thm.de/arin07/KSP_public_WS20_21/-/blob/master/aufgaben/a-pre/
+endif::[]
+endif::[]
+== KSP Vorbereitung zum Praktikum
+
+. Installieren Sie Linux auf Ihrem Rechner (Tipp: Ubuntu). Machen Sie sich mit dem Installieren von Paketen vertraut (`apt`). Sie benötigen einen Editor Ihrer Wahl, sowie die üblichen Entwicklungswerkzeuge (gcc, bison, flex).
+
+[NOTE]
+--
+*Alternative -> Verwendung der vorbereiteten VirtualBox VM*
+
+Unter link:https://hbx.fhhrz.net/getlink/fiW5bCoF7czq1FRKtUCTwoC8/debs.ova[] können Sie ein VM Image für Oracle VirtualBox (link:https://www.virtualbox.org/[]) herunterladen, das alle Anforderungen zur Entwicklung der Ninja VM erfüllt. Wenn Sie bereits Linux auf Ihrem System installiert haben, empfiehlt es sich trotzdem die bereitgestellte VM zu verwenden, da dort alle benötigten Pakete installiert sind. Beachten Sie bitte: Wir geben keinen Support für Probleme die auf Eigeninstallationen auftreten. D.h. Benutzen Sie Ihr eigenes System, kümmern Sie sich bitte selbst darum, dass alles läuft. Was in der Regel heißt bestimmte Softwarepakete zu installieren.
+
+Das Passwort für den Benutzer (`student`) der bereitgestellten Virtualbox VM: `student` 
+
+Hier noch eine Liste an installierten/verfügbaren IDEs und Editoren:
+
+* Atom (Open Source Editor und IDE)
+* Visual Studio Code (Open Source Editor und IDE)
+* Sublime Text 3 (installiert, keine Lizenz)
+* VIM (Editor, IDE, ...)
+* CLION (Jetbrains, muss selbstständig installiert werden. Lizenz kann kostenlos geholt werden: link:https://www.jetbrains.com/shop/eform/students[])
+
+Generell sollte für diesen Kurs auch MacOSX oder ein Windows 10 mit WSL2 ausreichen, solange alle notwendigen Pakete installiert sind. Hier sind sie jedoch auch aus sich alleine gestellt.
+--
+
+. Editieren Sie folgendes Programm mit einer IDE / einem Editor Ihrer Wahl in einer Datei `hello.c`:
+
+[source, c]
+----
+#include <stdio.h>
+int main(int argc, char *argv[]) {
+    printf("Hello, world!\n");
+    return 0;
+}
+----
+
+[start=3]
+. Übersetzen und binden Sie das Programm mit der Kommandozeile
+
+[source, shell]
+----
+$ gcc -g -Wall -std=c99 -pedantic -o hello hello.c
+----
+
+[start=4]
+. Lassen Sie das Programm laufen mit der Kommandozeile
+
+[source, shell]
+----
+$ ./hello
+----
+
+Es muss den Text "Hello, world!" (ohne die Anführungszeichen, mit einem Zeilenumbruch am Ende) ausgeben.
