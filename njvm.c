@@ -304,9 +304,11 @@ int main(int argc, char* argv[]){
     if (argc > 1){
         for(int i=1; i< argc; i++){
             if (strcmp(argv[i], "--help") == 0){
-                printf("usage: ../njvm [option] [option] ...\n"
-                       "  --version        show version and exit\n"
-                       "  --help           show this help and exit\n");
+                printf("usage: ../njvm [option] [option] file ...\n"
+                       "  --version                            show version and exit\n"
+                       "  --help                               show this help and exit\n"
+                       "  --compile <inputfile> <outputfile>   compile an asm file to bin and run the bin\n"
+                       "  file                                 run Programm");
                 exit(0);
             }else if (strcmp(argv[i], "--version") == 0) {
                 printf("Ninja Virtual Machine version %d\n", VERSION);
