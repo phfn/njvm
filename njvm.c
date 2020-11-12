@@ -12,6 +12,7 @@
 #define STACKOVERFLOW_ERROR 2
 #define STACKUNDERFLOW_ERROR 3
 #define DIVISION_BY_ZERO_ERROR 4
+#define FRAME_POINTER_INVALID 5
 
 #define FILE_NOT_FOUND_ERROR 5
 #define WRONG_FILE_SIZE_ERROR 6
@@ -24,19 +25,26 @@
 
 #define STACK_SIZE 100
 
-#define HALT 0
-#define PUSHC 1
+#define HALT   0
+#define PUSHC  1
 
-#define ADD 2
-#define SUB 3
-#define MUL 4
-#define DIV 5
-#define MOD 6
+#define ADD    2
+#define SUB    3
+#define MUL    4
+#define DIV    5
+#define MOD    6
 
-#define RDINT 7
-#define WRINT 8
-#define RDCHR 9
+#define RDINT  7
+#define WRINT  8
+#define RDCHR  9
 #define WRCHR 10
+
+#define PUSHG 11
+#define POPG  12
+#define ASF   13
+#define RSF   14
+#define PUSHL 15
+#define POPL  16
 
 #define IMMEDIATE(x) ((x) & 0x00FFFFFF)
 //immediate belegt nur die letzten 24 bit, die ersten 8 werden auf 0 gesetzt.
@@ -46,12 +54,13 @@
 //wenn erstes immediate gesetz (also negative zahl im immediate) -> setzen auch die ersten 8 bit damit die Zahl auch als negativ betrachtet wird
 
 char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR"};
-//char* opCodes[]={"halt ", "pushc", "add  ", "sub  ", "mul  ", "div  ", "mov  ", "rdint", "wrint", "rdchr", "wrchr"};
+
 
 int stack[STACK_SIZE];
 int *sp=stack;//Stack Pointer
-unsigned int pc=0;//Programm Counter
+int *fp=stack;//frame pointer
 
+unsigned int pc=0;//Programm Counter
 unsigned int *prog_mem;
 unsigned int prog_mem_size;
 
@@ -69,6 +78,7 @@ void push(int value){
     sp = sp + 1;
 }
 
+
 int pop(){
     if(sp <= stack){
         printf("STACKUNDERFLOW_ERROR");
@@ -79,6 +89,7 @@ int pop(){
 
     return res;
 }
+
 
 unsigned int halt_bool=FALSE;
 void exec(unsigned int IR){
@@ -160,11 +171,42 @@ void exec(unsigned int IR){
             x = pop();
             printf("%c", x);
             break;
+        case PUSHG :
+            push(sda[imm]);
+            break;
+
+        case POPG:
+            sda[imm]=pop();
+            break;
+
+        case ASF:
+            if(fp>=sp) exit(FRAME_POINTER_INVALID);
+            if(sp+imm>&stack[STACK_SIZE]) exit(STACKOVERFLOW_ERROR);
+            if(sp+imm<stack) exit(STACKUNDERFLOW_ERROR);
+            push(fp);
+            fp = sp;
+            sp = sp + imm;
+            break;
+
+        case RSF:
+            sp = fp;
+            fp = pop();
+            break;
+
+        case PUSHL:
+            *(fp +imm) = pop();
+            break;
+
+        case POPL:
+            push(*(fp + imm));
+            break;
+
 
         default:
             printf("ERROR NOT IMPLEMENTED YET");
     }
 }
+
 
 void run(){
     unsigned int IR;
@@ -255,40 +297,53 @@ void print_prog_mem(){
     }while(opcode!=HALT);
 }
 
+unsigned int prog_halt[]={(HALT << 24)};
 
 int main(int argc, char* argv[]){
 
-    if (argc < 2) {
-        printf("Error: no code file specified\n");
-        exit(NO_CODE_FILE_ARGUMENT_ERROR);
-    }
-    if (strcmp(argv[1], "--help") == 0){
-        printf("usage: %s [options] <code file>\n"
-               "  --version        show version and exit\n"
-               "  --help           show this help and exit", argv[0]);
-        exit(0);
-    }
-    else if (strcmp(argv[1], "--version") == 0){
-        printf("Ninja Virtual Machine version %d (compiled %s, %s)\n", VERSION, __DATE__, __TIME__);
-        exit(0);
-    }
-    else if (strcmp(argv[1], "--test") == 0){
-        printf("RESERVED FOR TESTING PURPOSE\n");
-        exit(0);
-    }
-    else if (argv[1][0] == '-'){
-        printf("unknown command line argument '%s', try '%s --help'\n", argv[1], argv[0]);
-        exit(UNKNOWN_ARGUMENT_ERROR);
-    }
-    else{
-        load_memory(argv[1]);
-    }
+    if (argc > 1){
+        for(int i=1; i< argc; i++){
+            if (strcmp(argv[i], "--help") == 0){
+                printf("usage: ../njvm [option] [option] ...\n"
+                       "  --version        show version and exit\n"
+                       "  --help           show this help and exit\n");
+                exit(0);
+            }else if (strcmp(argv[i], "--version") == 0) {
+                printf("Ninja Virtual Machine version %d\n", VERSION);
+                exit(0);
+            }else if (strcmp(argv[i], "--prog1") == 0) {
+                prog_mem = prog_1;
+                break;
+            }else if (strcmp(argv[i], "--prog2") == 0) {
+                prog_mem = prog_2;
+                break;
+            }else if (strcmp(argv[i], "--prog3") == 0) {
+                prog_mem = prog_3;
+                break;
+            }else if (strcmp(argv[i], "--test") == 0) {
+                printf("RESERVED FOR TESTING PURPOSE\n");
+                exit(0);
+            }else if (strcmp(argv[i], "--compile") == 0) {
+                char* imput_file = argv[i+1];
+                char* output_file = argv[i+2];
+                system("chmod +x nja");
+                char command[100];
+                sprintf(command, "./nja %s %s", imput_file, output_file);
+                printf(command);
+                system(command);
+                i++;
+                exit(0);
+            }else{
+                load_memory(argv[1]);
+            }
+        }
+    }else{
 
-    printf("Ninja Virtual Machine started\n");
-
+        prog_mem=prog_halt;
+    }
     print_prog_mem();
+    printf("Ninja Virtual Machine started\n");
     run();
-
     printf("Ninja Virtual Machine stopped\n");
     return 0;
 }
