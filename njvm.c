@@ -12,22 +12,30 @@
 #define STACKOVERFLOW_ERROR 2
 #define STACKUNDERFLOW_ERROR 3
 #define DIVISION_BY_ZERO_ERROR 4
+#define FRAME_POINTER_INVALID 5
 
 #define STACK_SIZE 100
 
-#define HALT 0
-#define PUSHC 1
+#define HALT   0
+#define PUSHC  1
 
-#define ADD 2
-#define SUB 3
-#define MUL 4
-#define DIV 5
-#define MOD 6
+#define ADD    2
+#define SUB    3
+#define MUL    4
+#define DIV    5
+#define MOD    6
 
-#define RDINT 7
-#define WRINT 8
-#define RDCHR 9
+#define RDINT  7
+#define WRINT  8
+#define RDCHR  9
 #define WRCHR 10
+
+#define PUSHG 11
+#define POPG  12
+#define ASF   13
+#define RSF   14
+#define PUSHL 15
+#define POPL  16
 
 #define IMMEDIATE(x) ((x) & 0x00FFFFFF)
 //immediate belegt nur die letzten 24 bit, die ersten 8 werden auf 0 gesetzt.
@@ -36,7 +44,9 @@
 //if (i&0x00800000){i= i | 0xFF000000} else{i=i}
 //wenn erstes immediate gesetz (also negative zahl im immediate) -> setzen auch die ersten 8 bit damit die Zahl auch als negativ betrachtet wird
 
-char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR"};
+char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR", "PUSHG", "POPG", "ASF", "RSF", "PSUHL", "POPL"};
+
+int sda[];
 
 unsigned int *prog_mem;
 
@@ -44,7 +54,7 @@ unsigned int pc=0;//Programm Counter
 
 int stack[STACK_SIZE];
 int *sp=stack;//Stack Pointer
-
+int *fp=stack;//frame pointer
 
 
 void push(int value){
@@ -151,6 +161,36 @@ void exec(unsigned int IR){
             x = pop();
             printf("%c", x);
             break;
+        case PUSHG :
+            push(sda[imm]);
+            break;
+
+        case POPG:
+            sda[imm]=pop();
+            break;
+
+        case ASF:
+            if(fp>=sp) exit(FRAME_POINTER_INVALID);
+            if(sp+imm>&stack[STACK_SIZE]) exit(STACKOVERFLOW_ERROR);
+            if(sp+imm<stack) exit(STACKUNDERFLOW_ERROR);
+            push(fp);
+            fp = sp;
+            sp = sp + imm;
+            break;
+
+        case RSF:
+            sp = fp;
+            fp = pop();
+            break;
+
+        case PUSHL:
+            *(fp +imm) = pop();
+            break;
+
+        case POPL:
+            push(*(fp + imm));
+            break;
+
 
         default:
             printf("ERROR NOT IMPLEMENTED YET");
