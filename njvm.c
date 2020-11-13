@@ -336,10 +336,14 @@ int main(int argc, char* argv[]){
             }else if (strcmp(argv[i], "--assemble") == 0) {
                 char* imput_file = argv[i+1];
                 char* output_file = argv[i+2];
-                system("chmod +x nja");
-                char command[256];
-                sprintf(command, "./nja %s %s", imput_file, output_file);
-                system(command);
+                char* nja_path[256];
+                char* chmod_cmd[256];
+                char nja_cmd[256];
+                sprintf(nja_path, "aufgaben/a%d/nja", VERSION);
+                sprintf(chmod_cmd, "chmod +x %s", nja_path);
+                system(chmod_cmd);
+                sprintf(nja_cmd, "./%s %s %s", nja_path, imput_file, output_file);
+                system(nja_cmd);
                 i++;
             }else if (argv[i][0] == '-'){
                 printf("unknown command line argument '%s', try '%s --help'\n", argv[1], argv[0]);
