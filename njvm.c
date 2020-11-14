@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VERSION 2
+#define VERSION 3
 //#define DEBUG
 
 #define TRUE 1
@@ -52,7 +52,7 @@
 //if (i&0x00800000){i= i | 0xFF000000} else{i=i}
 //wenn erstes immediate gesetz (also negative zahl im immediate) -> setzen auch die ersten 8 bit damit die Zahl auch als negativ betrachtet wird
 
-char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR", "PUSHG", "POPG ", "ASF  ", "RSF  ", "PUSHL", "POPL"};
+char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR", "PUSHG", "POPG ", "ASF  ", "RSF  ", "PUSHL", "POPL "};
 
 int stack[STACK_SIZE];
 int sp=0;//Stack Pointer
@@ -226,17 +226,6 @@ void exec(unsigned int IR){
 }
 
 
-void run(){
-    unsigned int IR;
-    while(!halt_bool){
-
-        IR=prog_mem[pc];
-        pc=pc+1;
-        exec(IR);
-
-    }
-}
-
 void load_prog_memory(char *filepath){
     FILE *file;
     file = fopen(filepath, "r");
@@ -304,21 +293,96 @@ void load_prog_memory(char *filepath){
 }
 
 void print_prog_mem(){
-    unsigned int *p=&prog_mem[0];
     int opcode;
     unsigned int IR;
     int imm;
-    do{
-        IR=*p;
-        opcode=IR >> 24;
-        imm=SIGN_EXTEND(IMMEDIATE(IR));
-        printf("%s %3d\n", opCodes[opcode], imm);
-        p++;
-    }while(opcode!=HALT);
+    for(int i=0; i < prog_mem_size; i++) {
+        IR = prog_mem[i];
+        opcode = IR >> 24;
+        imm = SIGN_EXTEND(IMMEDIATE(IR));
+        if(i==pc){
+            printf("[%2d]: %s %3d <---pc\n", i , opCodes[opcode], imm);
+        }else{
+            printf("[%2d]: %s %3d\n", i , opCodes[opcode], imm);
+        }
+    }
 }
 
-unsigned int prog_halt[]={(HALT << 24)};
 
+void run(){
+    unsigned int IR;
+    while(!halt_bool){
+
+        IR=prog_mem[pc];
+        pc=pc+1;
+        exec(IR);
+
+    }
+}
+
+void print_data(){
+    for(int i=0; i< sda_size; i++){
+        printf("|%2d| %6d |\n", i, sda[i]);
+    }
+}
+
+void debug(){
+    int opcode;
+    unsigned int IR;
+    int imm;
+    int breakpoint=-1;
+    printf("Welcome to the njvm Debugger\n Please ue only the first character of any command. i for inspect, b17r for breakpoint at 17 und run\n");
+    while(!halt_bool){
+        IR = prog_mem[pc];
+        opcode = IR >> 24;
+        imm = SIGN_EXTEND(IMMEDIATE(IR));
+        printf("[%2d]: %s %3d\n", pc , opCodes[opcode], imm);
+        printf("(i)nspect, (l)ist, (b)reakpoint, (s)tep, (r)un, (q)uit?\n");
+        char c;
+        scanf(" %c",&c);
+        switch (c){
+            case 'i'://inspect
+                printf("(s)tack or (d)ata?\n");
+                scanf(" %c",&c);
+                switch (c) {
+                    case 's'://stack
+                        print_stack();
+                        break;
+                    case 'd'://data
+                        print_data();
+                        break;
+                };
+                break;
+            case 'l'://list
+                print_prog_mem();
+                break;
+            case 'b'://breakpoint
+                printf("address to set, -1 to clear, now its %d\n", breakpoint);
+                scanf(" %d", &breakpoint);
+                printf("set to %d\n", breakpoint);
+                break;
+            case 's'://step
+                pc=pc+1;
+                exec(IR);
+                break;
+            case 'r'://run
+                while(!halt_bool && pc!=breakpoint){
+
+                    IR=prog_mem[pc];
+                    pc=pc+1;
+                    exec(IR);
+
+                }
+                break;
+
+            case  'q'://quit
+                halt_bool=TRUE;
+                break;
+
+        };
+
+    }
+}
 int main(int argc, char* argv[]){
 
     if (argc > 1){
@@ -336,8 +400,8 @@ int main(int argc, char* argv[]){
             }else if (strcmp(argv[i], "--assemble") == 0) {
                 char* imput_file = argv[i+1];
                 char* output_file = argv[i+2];
-                char* nja_path[256];
-                char* chmod_cmd[256];
+                char nja_path[256];
+                char chmod_cmd[256];
                 char nja_cmd[256];
                 sprintf(nja_path, "aufgaben/a%d/nja", VERSION);
                 sprintf(chmod_cmd, "chmod +x %s", nja_path);
@@ -345,6 +409,11 @@ int main(int argc, char* argv[]){
                 sprintf(nja_cmd, "./%s %s %s", nja_path, imput_file, output_file);
                 system(nja_cmd);
                 i++;
+            }else if (strcmp(argv[i], "--debug") == 0) {
+                printf("Ninja Virtual Machine started\n");
+                debug();
+                printf("Ninja Virtual Machine stopped\n");
+                return 0;
             }else if (argv[i][0] == '-'){
                 printf("unknown command line argument '%s', try '%s --help'\n", argv[1], argv[0]);
                 exit(INVALID_ARGUMENTS_ERROR);
