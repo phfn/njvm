@@ -226,11 +226,12 @@ void exec(unsigned int IR){
             break;
 
         case PUSHL:
-            stack[fp +imm] = pop();
+            push(stack[fp + imm]);
             break;
 
         case POPL:
-            push(stack[fp + imm]);
+
+            stack[fp +imm] = pop();
             break;
 
         case EQ:
@@ -478,7 +479,7 @@ int main(int argc, char* argv[]){
                 printf("Ninja Virtual Machine version %d\n", VERSION);
                 exit(0);
             }else if (strcmp(argv[i], "--assemble") == 0) {
-                char* input_file = argv[i+1];
+                char* input_file = argv[i + 1];
                 char* output_file = argv[i+2];
                 char nja_path[256];
                 char chmod_cmd[256];
