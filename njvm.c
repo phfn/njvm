@@ -21,6 +21,8 @@
 #define MEMORY_FULL_ERROR 9
 #define INVALID_ARGUMENTS_ERROR 10
 
+#define INVALID_JUMP_ERROR 11
+
 #define FRAME_POINTER_INVALID 12
 #define STACK_SIZE 100
 
@@ -45,6 +47,16 @@
 #define PUSHL 15
 #define POPL  16
 
+#define EQ    17
+#define NE    18
+#define LT    19
+#define LE    20
+#define GT    21
+#define GE    22
+#define JMP   23
+#define BRF   24
+#define BRT   25
+
 #define IMMEDIATE(x) ((x) & 0x00FFFFFF)
 //immediate belegt nur die letzten 24 bit, die ersten 8 werden auf 0 gesetzt.
 
@@ -52,7 +64,8 @@
 //if (i&0x00800000){i= i | 0xFF000000} else{i=i}
 //wenn erstes immediate gesetz (also negative zahl im immediate) -> setzen auch die ersten 8 bit damit die Zahl auch als negativ betrachtet wird
 
-char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR", "PUSHG", "POPG ", "ASF  ", "RSF  ", "PUSHL", "POPL "};
+char* opCodes[]={"HALT ", "PUSHC", "ADD  ", "SUB  ", "MUL  ", "DIV  ", "MOD  ", "RDINT", "WRINT", "RDCHR", "WRCHR", "PUSHG", "POPG ", "ASF  ", "RSF  ", "PUSHL", "POPL ",
+                 "EQ   ", "NE   ", "LT   ", "LE   ", "GT   ", "GE   ", "JMP  ", "BRF  ", "BRT  "};
 
 int stack[STACK_SIZE];
 int sp=0;//Stack Pointer
@@ -68,7 +81,7 @@ unsigned int sda_size;
 
 void push(int value){
     if(sp > STACK_SIZE){
-        printf("STACKOVERFLOW_ERROR");
+        printf("STACKOVERFLOW_ERROR\n");
         exit(STACKOVERFLOW_ERROR);
     }
 
@@ -79,10 +92,10 @@ void push(int value){
 
 int pop(){
     if(sp <= 0){
-        printf("STACKUNDERFLOW_ERROR");
+        printf("STACKUNDERFLOW_ERROR\n");
         exit(STACKUNDERFLOW_ERROR);
     }
-    sp--;//siehe ln 57
+    sp--;
 
     return stack[sp];
 }
@@ -220,6 +233,73 @@ void exec(unsigned int IR){
             push(stack[fp + imm]);
             break;
 
+        case EQ:
+            y = pop();
+            x = pop();
+            push(x == y);
+            break;
+
+        case NE:
+            y = pop();
+            x = pop();
+            push(x != y);
+            break;
+
+        case LT:
+            y = pop();
+            x = pop();
+            push(x < y);
+            break;
+
+        case LE:
+            y = pop();
+            x = pop();
+            push(x <= y);
+            break;
+
+        case GT:
+            y = pop();
+            x = pop();
+            push(x > y);
+            break;
+
+        case GE:
+            y = pop();
+            x = pop();
+            push(x >= y);
+            break;
+
+        case JMP:
+            if ((imm > 0) && (imm < prog_mem_size))
+                pc = imm;
+            else {
+                printf("Error: Jump target out of bounds\n");
+                exit(INVALID_JUMP_ERROR);
+            }
+            break;
+
+        case BRF:
+            if (pop() == FALSE){
+                if ((imm > 0) && (imm < prog_mem_size))
+                    pc = imm;
+                else {
+                    printf("Error: Jump target out of bounds\n");
+                    exit(INVALID_JUMP_ERROR);
+                }
+            }
+            break;
+
+        case BRT:
+            if (pop() == TRUE){
+                if ((imm > 0) && (imm < prog_mem_size))
+                    pc = imm;
+                else {
+                    printf("Error: Jump target out of bounds\n");
+                    exit(INVALID_JUMP_ERROR);
+                }
+            }
+            break;
+
         default:
             printf("ERROR NOT IMPLEMENTED YET");
     }
@@ -331,7 +411,7 @@ void debug(){
     unsigned int IR;
     int imm;
     int breakpoint=-1;
-    printf("Welcome to the njvm Debugger\n Please ue only the first character of any command. i for inspect, b17r for breakpoint at 17 und run\n");
+    printf("Welcome to the njvm Debugger\n Please use only the first character of any command. i for inspect, b17r for breakpoint at 17 und run\n");
     while(!halt_bool){
         IR = prog_mem[pc];
         opcode = IR >> 24;
@@ -398,7 +478,7 @@ int main(int argc, char* argv[]){
                 printf("Ninja Virtual Machine version %d\n", VERSION);
                 exit(0);
             }else if (strcmp(argv[i], "--assemble") == 0) {
-                char* imput_file = argv[i+1];
+                char* input_file = argv[i+1];
                 char* output_file = argv[i+2];
                 char nja_path[256];
                 char chmod_cmd[256];
@@ -406,7 +486,7 @@ int main(int argc, char* argv[]){
                 sprintf(nja_path, "aufgaben/a%d/nja", VERSION);
                 sprintf(chmod_cmd, "chmod +x %s", nja_path);
                 system(chmod_cmd);
-                sprintf(nja_cmd, "./%s %s %s", nja_path, imput_file, output_file);
+                sprintf(nja_cmd, "./%s %s %s", nja_path, input_file, output_file);
                 system(nja_cmd);
                 i++;
             }else if (strcmp(argv[i], "--debug") == 0) {
@@ -427,7 +507,7 @@ int main(int argc, char* argv[]){
         exit(INVALID_ARGUMENTS_ERROR);
     }
     printf("Ninja Virtual Machine started\n");
-    print_prog_mem();
+    //print_prog_mem();
     run();
     printf("Ninja Virtual Machine stopped\n");
     return 0;
