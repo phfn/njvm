@@ -213,13 +213,13 @@ void exec(unsigned int IR){
             break;
 
         case PUSHL:
-            stack[fp +imm] = pop();
-            break;
-
-        case POPL:
             push(stack[fp + imm]);
             break;
 
+        case POPL:
+
+            stack[fp +imm] = pop();
+            break;
         default:
             printf("ERROR NOT IMPLEMENTED YET");
     }
@@ -331,7 +331,7 @@ void debug(){
     unsigned int IR;
     int imm;
     int breakpoint=-1;
-    printf("Welcome to the njvm Debugger\n Please ue only the first character of any command. i for inspect, b17r for breakpoint at 17 und run\n");
+    printf("Welcome to the njvm Debugger\n Please use only the first character of any command. i for inspect, b17r for breakpoint at 17 und run\n");
     while(!halt_bool){
         IR = prog_mem[pc];
         opcode = IR >> 24;
@@ -398,7 +398,7 @@ int main(int argc, char* argv[]){
                 printf("Ninja Virtual Machine version %d\n", VERSION);
                 exit(0);
             }else if (strcmp(argv[i], "--assemble") == 0) {
-                char* imput_file = argv[i+1];
+                char* input_file = argv[i + 1];
                 char* output_file = argv[i+2];
                 char nja_path[256];
                 char chmod_cmd[256];
@@ -406,7 +406,7 @@ int main(int argc, char* argv[]){
                 sprintf(nja_path, "aufgaben/a%d/nja", VERSION);
                 sprintf(chmod_cmd, "chmod +x %s", nja_path);
                 system(chmod_cmd);
-                sprintf(nja_cmd, "./%s %s %s", nja_path, imput_file, output_file);
+                sprintf(nja_cmd, "./%s %s %s", nja_path, input_file, output_file);
                 system(nja_cmd);
                 i++;
             }else if (strcmp(argv[i], "--debug") == 0) {
